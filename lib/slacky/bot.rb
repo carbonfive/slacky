@@ -4,7 +4,6 @@ require 'tzinfo'
 
 module Slacky
   class Bot
-
     attr_reader :client
 
     def initialize(config)
@@ -18,6 +17,15 @@ module Slacky
       end
 
       @client = Slack::RealTime::Client.new
+
+      resp = @client.web_client.users_list presence: 1
+      throw resp unless resp.ok
+      resp.members.each do |member|
+        next unless member.profile.email # no bots
+        next if member.deleted # no ghosts
+        next if member.is_ultra_restricted # no single channel guests
+        User.new(username: member.name, slack_id: member.id, timezone: member.tz, presence: member.presence).save unless User.find member.id
+      end
     end
 
     def on(message, &block)
@@ -63,7 +71,7 @@ module Slacky
         @message_handlers.each do |mh|
           if message === mh[:message]
             puts "Executing command: #{command}"
-            mh[:block].call command, args, data, &respond
+            mh[:handler].call data, args, &respond
           end
         end
       end

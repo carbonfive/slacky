@@ -1,33 +1,52 @@
 require 'tzinfo'
 
-class Parky::User
-  attr_accessor :slack_user_id, :slack_im_id, :timezone, :data
+class Slacky::User
+  attr_accessor :slack_id, :slack_im_id, :timezone, :data
 
   def self.db=(db)
     @@db = db
   end
 
-  def self.find(user_id)
-    user = nil
-    @@db.exec_params "select slack_im_id, from users where slack_user_id = $1", [ user_id ] do |row|
-      user = self.new user_id: slack_user_id, slack_im_id: row[0], timezone: row[1], data: row[2]
-    end
-    user
+  def self.initialize_table
+    @@db.exec <<-SQL
+create table if not exists users (
+  username     varchar(64),
+  slack_id     varchar(20),
+  slack_im_id  varchar(20),
+  timezone     varchar(256),
+  presence     varchar(64),
+  data         jsonb
+);
+SQL
+  end
+
+  def self.find(slack_id)
+    result = @@db.exec_params "select username, slack_im_id, timezone, presence, data from users where slack_id = $1", [ slack_id ]
+    return nil if result.ntuples == 0
+    row = result[0]
+    self.new slack_id:    slack_id,
+             username:    row['username'],
+             slack_im_id: row['slack_im_id'],
+             timezone:    row['timezone'],
+             presence:    row['presence'],
+             data:        row['data']
   end
 
   def initialize(attrs={})
-    @slack_user_id = attrs[:user_id]
-    @slack_im_id   = attrs[:im_id]
-    @timezone      = attrs[:timezone] || "America/Los_Angeles"
-    @data          = attrs[:data]
+    @username    = attrs[:username]
+    @slack_id    = attrs[:slack_id]
+    @slack_im_id = attrs[:slack_im_id]
+    @timezone    = attrs[:timezone] || "America/Los_Angeles"
+    @presence    = attrs[:presence]
+    @data        = attrs[:data]
 
     @tz = TZInfo::Timezone.get @timezone
   end
 
   def save
-    @@db.exec_params "delete from users where slack_user_id = $1", [ @slack_user_id ]
-    @@db.exec_params "insert into users (slack_user_id, slack_im_id, timezone, data)
-                      values ($1, $2, $3, $4)", [ @slack_user_id, @slack_im_id, @timezone, @data ]
+    @@db.exec_params "delete from users where slack_id = $1", [ @slack_id ]
+    @@db.exec_params "insert into users (username, slack_id, slack_im_id, timezone, presence, data)
+                      values ($1, $2, $3, $4, $5, $6)", [ @username, @slack_id, @slack_im_id, @timezone, @presence, @data ]
   end
 
   def reset
