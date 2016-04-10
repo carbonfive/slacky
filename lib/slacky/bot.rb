@@ -24,12 +24,24 @@ module Slacky
         next unless member.profile.email # no bots
         next if member.deleted # no ghosts
         next if member.is_ultra_restricted # no single channel guests
-        User.new(username: member.name, slack_id: member.id, timezone: member.tz, presence: member.presence).save unless User.find member.id
+        user = User.find(member.id) || User.new(slack_id: member.id)
+        user.username = member.name
+        user.first_name = member.profile.first_name
+        user.last_name = member.profile.last_name
+        user.email = member.profile.email
+        user.timezone = member.tz
+        user.presence = member.presence
+        user.data = {} unless user.data
+        user.save
       end
     end
 
     def on(message, &block)
       @message_handlers << { message: message, handler: block }
+    end
+
+    def on_help(&block)
+      @help_handler = block
     end
 
     def run
@@ -57,23 +69,38 @@ module Slacky
         tokens = data.text.split ' '
         channel = data.channel
         next unless tokens.length > 0
-        next unless tokens[0].downcase == @config.down_name
-        next if @config.slack_accept_channels.length > 0 and ! @config.slack_accept_channels.index(channel)
         next if @config.slack_reject_channels.index channel
+        user = User.find data.user
+        next unless user
+        if channel == user.slack_im_id
+          tokens.shift if tokens.first.downcase == @config.down_name
+        else
+          first = tokens.shift
+          next unless first.downcase == @config.down_name
+          next if @config.slack_accept_channels.length > 0 and ! @config.slack_accept_channels.index(channel)
+        end
         @client.typing channel: channel
         @channels << channel
         respond = Proc.new { |msg| @client.message channel: channel, reply_to: data.id, text: msg }
-        message = tokens[1..-1].join ' '
-        command = tokens[1]
-        args = tokens[2..-1]
-        command = 'help' unless command
+        message = tokens.join ' '
+        command = tokens.first
+        args = tokens[1..-1]
         blowup if command == 'blowup'
+        handled = 0
         @message_handlers.each do |mh|
-          if message === mh[:message]
-            puts "Executing command: #{command}"
-            mh[:handler].call data, args, &respond
+          if mh[:message] === message
+            puts "Executing command: #{mh[:message]}"
+            handled += 1 if mh[:handler].call user, data, args, &respond
           end
         end
+        @help_handler.call user, data, args, &respond if handled == 0
+      end
+
+      @client.on :presence_change do |data|
+        user = User.find data.user
+        next unless user
+        user.presence = data['presence']
+        user.save
       end
 
       @client.start!
@@ -95,7 +122,7 @@ module Slacky
       end
     end
 
-    def blowup(data, args, &respond)
+    def blowup(user, data, args, &respond)
       respond.call "Tick... tick... tick... BOOM!   Goodbye."
       EM.next_tick do
         raise "kablammo!"
