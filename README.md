@@ -1,16 +1,15 @@
-# Parky
+# Slacky
 
-### Carbon Five LA parking bot
+### Carbon Five Slack bot starter kit
 
-A Slack bot that helps figure out who's parking spots are available each
-day.
+This gem is an out of the box Slack bot running in Ruby.  It runs as a
+daemon, has a CLI, and in the future will integrate with other Carbon
+Five services (like Timesheet).
 
 ## Installation
 
-% gem install southy
+...
 
 ## Usage
 
-To see how to use Parky, just run it with no arguments:
-
-% parky
+...
