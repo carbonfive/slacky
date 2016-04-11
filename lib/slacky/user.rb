@@ -4,6 +4,12 @@ class Slacky::User
   attr_accessor :username, :slack_id, :slack_im_id, :first_name, :last_name, :email, :timezone, :presence, :data
   attr_reader :tz
 
+  @@decorator = nil
+
+  def self.decorator
+    @@decorator
+  end
+
   def self.decorator=(decorator)
     @@decorator = decorator
   end
@@ -36,15 +42,17 @@ SQL
     return nil if result.ntuples == 0
 
     row = result[0]
-    self.new username:    row['username'],
-             slack_id:    row['slack_id'],
-             slack_im_id: row['slack_im_id'],
-             first_name:  row['first_name'],
-             last_name:   row['last_name'],
-             email:       row['email'],
-             timezone:    row['timezone'],
-             presence:    row['presence'],
-             data:        JSON.parse(row['data'])
+    user = self.new username:    row['username'],
+                    slack_id:    row['slack_id'],
+                    slack_im_id: row['slack_im_id'],
+                    first_name:  row['first_name'],
+                    last_name:   row['last_name'],
+                    email:       row['email'],
+                    timezone:    row['timezone'],
+                    presence:    row['presence'],
+                    data:        JSON.parse(row['data'])
+    user.extend decorator if decorator
+    user
   end
 
   def initialize(attrs={})
