@@ -4,7 +4,7 @@ require 'tzinfo'
 
 module Slacky
   class Bot
-    attr_reader :client
+    attr_reader :client, :config
 
     def initialize(config)
       @config = config
