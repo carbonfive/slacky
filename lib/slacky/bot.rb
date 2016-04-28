@@ -74,6 +74,8 @@ module Slacky
         next unless user
         if channel == user.slack_im_id
           tokens.shift if tokens.first.downcase == @config.down_name
+        elsif channel =~ /^D/
+          # nothing really
         else
           first = tokens.shift
           next unless first.downcase == @config.down_name
@@ -90,10 +92,10 @@ module Slacky
         @message_handlers.each do |mh|
           if mh[:message] === message
             puts "Executing command: #{mh[:message]}"
-            handled += 1 if mh[:handler].call user, data, args, &respond
+            handled += 1 if mh[:handler].call(user, data, args, &respond)
           end
         end
-        @help_handler.call user, data, args, &respond if handled == 0
+        @help_handler.call(user, data, args, &respond) if handled == 0
       end
 
       @client.on :presence_change do |data|
