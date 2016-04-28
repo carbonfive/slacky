@@ -4,7 +4,7 @@ require 'pg'
 
 module Slacky
   class Config
-    attr_reader :config, :pid_file, :name
+    attr_reader :config, :pid_file, :name, :db
 
     def initialize(name, opts = {})
       @name = name
