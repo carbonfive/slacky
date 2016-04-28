@@ -28,11 +28,11 @@ module Slacky
     end
 
     def slack_reject_channels
-      @config.fetch(:slack_reject_channels, '').split ','
+      @config.fetch(:slack_reject_channels, '').split(',').map {|c| c.strip}
     end
 
     def slack_accept_channels
-      @config.fetch(:slack_accept_channels, '').split ','
+      @config.fetch(:slack_accept_channels, '').split(',').map {|c| c.strip}
     end
 
     def slackbot_id
