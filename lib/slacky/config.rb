@@ -24,7 +24,7 @@ module Slacky
     end
 
     def slack_api_token
-      @config[:slack_api_token]
+      ENV['SLACK_API_TOKEN'] || @config[:slack_api_token]
     end
 
     def slack_reject_channels
