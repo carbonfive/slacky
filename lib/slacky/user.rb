@@ -29,7 +29,7 @@ create table if not exists users (
   email        varchar(128) not null,
   timezone     varchar(256),
   presence     varchar(64),
-  data         jsonb not null default '{}'
+  data         jsonb not null
 );
 SQL
   end
@@ -64,7 +64,7 @@ SQL
     @email       = attrs[:email]
     @timezone    = attrs[:timezone] || "America/Los_Angeles"
     @presence    = attrs[:presence]
-    @data        = attrs[:data] || '{}'
+    @data        = attrs[:data] || {}
   end
 
   def save
