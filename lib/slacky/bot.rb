@@ -71,11 +71,11 @@ module Slacky
         next if @config.slack_reject_channels.index channel
         user = User.find data.user
         next unless user
+        next if @config.slack_accept_channels.length > 0 and ! @config.slack_accept_channels.include?(channel)
         if channel == user.slack_im_id
           tokens.shift if tokens.first.downcase == @config.down_name
         else
           first = tokens.shift
-          next if @config.slack_accept_channels.length > 0 and ! @config.slack_accept_channels.include?(channel)
           next unless ( channel =~ /^D/ || first.downcase == @config.down_name )
         end
         @client.typing channel: channel
