@@ -35,10 +35,6 @@ module Slacky
       @config.fetch(:slack_accept_channels, '').split(',').map {|c| c.strip}
     end
 
-    def slackbot_id
-      @config[:slack_bot_id]
-    end
-
     def reload(options = {})
       options = { :force => false }.merge options
       load_config options

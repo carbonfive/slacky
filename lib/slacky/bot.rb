@@ -4,7 +4,7 @@ require 'tzinfo'
 
 module Slacky
   class Bot
-    attr_reader :client, :config
+    attr_reader :client, :config, :slack_id
 
     def initialize(config)
       @config = config
@@ -12,11 +12,28 @@ module Slacky
       @channels = Set.new
       @message_handlers = []
 
+      unless @config.slack_api_token
+        @config.log "No Slack API token found in #{@config.down_name}.yml!"
+        return
+      end
+
       Slack.configure do |slack_cfg|
         slack_cfg.token = @config.slack_api_token
       end
 
       @client = Slack::RealTime::Client.new
+
+      auth = @client.web_client.auth_test
+      if auth.ok
+        @slack_id = auth.user_id
+        @config.log "Slackbot is active!"
+        @config.log "Accepting channels: #{@config.slack_accept_channels}" if @config.slack_accept_channels.length > 0
+        @config.log "Ignoring channels: #{@config.slack_reject_channels}" if @config.slack_reject_channels.length > 0
+      else
+        puts "Slackbot cannot authorize with Slack.  Boo :-("
+        @config.log "Slackbot is doomed :-("
+        return
+      end
 
       resp = @client.web_client.users_list presence: 1
       throw resp unless resp.ok
@@ -45,26 +62,8 @@ module Slacky
     end
 
     def run
-      unless @config.slack_api_token
-        @config.log "No Slack API token found in #{@config.down_name}.yml!"
-        return
-      end
-
-      auth = @client.web_client.auth_test
-      if auth['ok']
-        @config.log "Slackbot is active!"
-        @config.log "Accepting channels: #{@config.slack_accept_channels}" if @config.slack_accept_channels.length > 0
-        @config.log "Ignoring channels: #{@config.slack_reject_channels}" if @config.slack_reject_channels.length > 0
-      else
-        puts "Slackbot cannot authorize with Slack.  Boo :-("
-        @config.log "Slackbot is doomed :-("
-        return
-      end
-
-      puts "Slackbot is active!"
-
       @client.on :message do |data|
-        next if data.user == @config.slackbot_id # this is the bot!
+        next if data.user == @slack_id
         next unless data.text
         tokens = data.text.split ' '
         channel = data.channel
@@ -103,6 +102,7 @@ module Slacky
         user.save
       end
 
+      puts "Slackbot is active!"
       @client.start!
     rescue => e
       @config.log "An error ocurring inside the Slackbot", e
