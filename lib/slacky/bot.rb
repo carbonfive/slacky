@@ -75,8 +75,8 @@ module Slacky
           tokens.shift if tokens.first.downcase == @config.down_name
         else
           first = tokens.shift
-          next unless ( channel =~ /^D/ || first.downcase == @config.down_name )
           next if @config.slack_accept_channels.length > 0 and ! @config.slack_accept_channels.include?(channel)
+          next unless ( channel =~ /^D/ || first.downcase == @config.down_name )
         end
         @client.typing channel: channel
         @channels << channel
