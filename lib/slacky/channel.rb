@@ -1,6 +1,7 @@
 module Slacky
   class Channel
-    attr_reader :slack_id, :name, :topic, :purpose, :members, :type
+    attr_reader :slack_id, :topic, :purpose, :members, :type
+    attr_accessor :name
 
     @@channels = {}
     @@bot = nil

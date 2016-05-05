@@ -24,24 +24,21 @@ module Slacky
         end
       end
 
-      @client.on :channel_deleted do |data|
-        Channel.find(data.channel).tap do |channel|
-          channel.delete
-          puts "Channel ##{channel.name} was deleted"
-        end
-      end
+      handle_channel(:channel_deleted)   { |c| c.delete }
+      handle_channel(:channel_archive)   { |c| c.archive }
+      handle_channel(:channel_unarchive) { |c| c.unarchive }
+      handle_channel(:channel_rename)    { |c, data| c.name = data.channel.name }
+    end
 
-      @client.on :channel_archive do |data|
-        Channel.find(data.channel).tap do |channel|
-          channel.archive
-          puts "Channel ##{channel.name} was archived"
-        end
-      end
-
-      @client.on :channel_unarchive do |data|
-        Channel.find(data.channel).tap do |channel|
-          channel.unarchive
-          puts "Channel ##{channel.name} was un-archived"
+    def handle_channel(event)
+      @client.on event do |data|
+        channel_id = data.channel.is_a?(String) ? data.channel : data.channel.id
+        Channel.find(channel_id).tap do |channel|
+          yield channel, data
+          verb = event.to_s.split("_").last
+          verb = "#{verb}d" if verb =~ /e$/
+          verb = "#{verb}ed" unless verb =~ /ed$/
+          puts "Channel ##{channel.name} was #{verb}"
         end
       end
     end
