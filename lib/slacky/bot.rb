@@ -36,6 +36,8 @@ module Slacky
         return
       end
 
+      @bookkeeper = Bookkeeper.new @client
+
       Channel.bot = self
       Message.bot = self
 
@@ -140,19 +142,14 @@ module Slacky
         handle_im      message if [ :im              ].include? channel.type
       end
 
-      @client.on :presence_change do |data|
-        user = User.find data.user
-        next unless user
-        user.presence = data['presence']
-        user.save
-      end
-
       @raw_handlers.each do |h|
         type, handler = h.values_at :type, :handler
         @client.on type do |data|
           handler.call data
         end
       end
+
+      @bookkeeper.keep_the_books
 
       puts "Slackbot is active!"
       @client.start!

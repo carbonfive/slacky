@@ -31,6 +31,20 @@ module Slacky
       @archived
     end
 
+    def archive
+      @archived = true
+    end
+
+    def unarchive
+      @archived = false
+    end
+
+    def delete
+      @@channels.delete @slack_id
+      @@channels.delete "##{@name}"
+      @@channels.delete "@#{@user.username}" if @user
+    end
+
     def member?
       case @type
       when :channel ; @member

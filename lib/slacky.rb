@@ -5,6 +5,7 @@ module Slacky
   require 'slacky/daemon'
   require 'slacky/service'
   require 'slacky/bot'
+  require 'slacky/bookkeeper'
   require 'slacky/user'
   require 'slacky/channel'
   require 'slacky/message'
