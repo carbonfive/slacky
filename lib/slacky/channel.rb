@@ -11,7 +11,7 @@ module Slacky
     end
 
     def self.find(channel)
-      return channel.map { |c| Channel.find c } if channel.is_a? Array
+      return channel.map { |c| Channel.find c }.compact if channel.is_a? Array
       return channel if channel.is_a? Channel
       @@channels[channel]
     end
@@ -44,6 +44,12 @@ module Slacky
       @@channels.delete @slack_id
       @@channels.delete "##{@name}"
       @@channels.delete "@#{@user.username}" if @user
+    end
+
+    def rename(name)
+      @@channels.delete "##{@name}"
+      @name = name
+      @@channels["##{@name}"] = self
     end
 
     def member?
