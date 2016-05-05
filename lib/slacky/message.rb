@@ -26,7 +26,9 @@ module Slacky
     end
 
     def command?
-      @pieces.length > 0 && @pieces[0] == @@bot.name
+      first = word 0
+      return false unless first
+      first == @@bot.name || first == "<@#{@@bot.slack_id}>"
     end
 
     def command
@@ -47,9 +49,13 @@ module Slacky
 
     private
 
-    def downword(n)
+    def word(n)
       return nil unless @pieces.length > n
-      @pieces[n].downcase
+      @pieces[n]
+    end
+
+    def downword(n)
+      word(n) && word(n).downcase
     end
   end
 end
