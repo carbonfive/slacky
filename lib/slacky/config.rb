@@ -1,22 +1,22 @@
 require 'yaml'
 require 'time'
 require 'pg'
+require 'dotenv'
 
 module Slacky
   class Config
-    attr_reader :config, :pid_file, :name, :db
+    attr_reader :pid_file, :name, :db
 
     def initialize(name, opts = {})
+      Dotenv.load
       @name = name
-      @dir = opts[:config_dir] || "#{ENV['HOME']}/.#{down_name}"
-      FileUtils.mkdir @dir unless File.directory? @dir
-      @pid_file = "#{@dir}/pid"
+      FileUtils.mkdir config_dir unless File.directory? config_dir
+      @pid_file = "#{config_dir}/pid"
       @db = PG.connect dbname: "slacky_#{down_name}"
       User.db = @db
       User.initialize_table
 
       @timestamps = {}
-      load_config :force => true
     end
 
     def down_name
@@ -24,20 +24,19 @@ module Slacky
     end
 
     def slack_api_token
-      ENV['SLACK_API_TOKEN'] || @config[:slack_api_token]
+      ENV['SLACK_API_TOKEN']
+    end
+
+    def config_dir
+      ENV['CONFIG_DIR'] || "#{ENV['HOME']}/.#{down_name}"
     end
 
     def slack_reject_channels
-      @config.fetch(:slack_reject_channels, '').split(',').map {|c| c.strip}
+      ENV.fetch('REJECT_CHANNELS', '').split(',').map {|c| c.strip}
     end
 
     def slack_accept_channels
-      @config.fetch(:slack_accept_channels, '').split(',').map {|c| c.strip}
-    end
-
-    def reload(options = {})
-      options = { :force => false }.merge options
-      load_config options
+      ENV.fetch('ACCEPT_CHANNELS', '').split(',').map {|c| c.strip}
     end
 
     def log(msg, ex = nil)
@@ -54,32 +53,8 @@ module Slacky
 
     private
 
-    def load_config(options)
-      @config = if_updated? config_file, options do
-        YAML.load( IO.read(config_file) )
-      end
-      @config ||= {}
-    end
-
-    def config_file
-      "#{@dir}/config.yml"
-    end
-
     def log_file
-      "#{@dir}/#{down_name}.log"
-    end
-
-    def if_updated?(file_name, options)
-      return nil if ! File.exists? file_name
-
-      file = File.new file_name
-      last_read = @timestamps[file_name]
-      stamp = file.mtime
-      if options[:force] || last_read.nil? || stamp > last_read
-        yield
-      else
-        nil
-      end
+      "#{config_dir}/#{down_name}.log"
     end
   end
 end

@@ -6,4 +6,6 @@ module Slacky
   require 'slacky/service'
   require 'slacky/bot'
   require 'slacky/user'
+  require 'slacky/channel'
+  require 'slacky/message'
 end
