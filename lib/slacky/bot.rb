@@ -71,14 +71,19 @@ module Slacky
     end
 
     def handle_channel(message)
+      handled = false
+
       if message.command?
         @command_handlers.each do |h|
           command, handler = h.values_at :command, :handler
           next unless command == message.command
           @client.typing channel: message.channel.slack_id
           handler.call message
+          handled = true
         end
       end
+
+      return if handled
 
       @channel_handlers.each do |h|
         match, channels, handler = h.values_at :match, :channels, :handler
@@ -96,12 +101,17 @@ module Slacky
         message.user.save
       end
 
+      handled = false
+
       @command_handlers.each do |h|
         command, handler = h.values_at :command, :handler
         next unless command == message.command
         @client.typing channel: message.channel.slack_id
         handler.call message
+        handled = true
       end
+
+      return if handled
 
       @im_handlers.each do |h|
         match, handler = h.values_at :match, :handler

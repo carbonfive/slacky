@@ -31,10 +31,9 @@ module Slacky
 
     def command
       if @channel.type == :im
-        @pieces.length > 0 && @pieces[0].downcase
+        command? ? downword(1) : downword(0)
       else
-        return nil unless command?
-        @pieces.length > 1 && @pieces[1].downcase
+        command? ? downword(1) : nil
       end
     end
 
@@ -44,6 +43,13 @@ module Slacky
 
     def no?
       [ 'n', 'no' ].include? @text
+    end
+
+    private
+
+    def downword(n)
+      return nil unless @pieces.length > n
+      @pieces[n].downcase
     end
   end
 end
