@@ -12,7 +12,7 @@ module Slacky
       @name = name
       FileUtils.mkdir config_dir unless File.directory? config_dir
       @pid_file = "#{config_dir}/pid"
-      @db = PG.connect dbname: "slacky_#{down_name}"
+      @db = PG.connect(db_connect_params)
       User.db = @db
       User.initialize_table
 
@@ -52,6 +52,10 @@ module Slacky
     end
 
     private
+
+    def db_connect_params
+      ENV['DATABASE_URL'] || { dbname: "slacky_#{down_name}" }
+    end
 
     def log_file
       "#{config_dir}/#{down_name}.log"
