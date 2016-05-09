@@ -31,10 +31,11 @@ create table if not exists users (
 SQL
     end
 
-    def self.find(slack_id_or_name)
-      result = @@db.exec_params "select * from users where slack_id = $1", [ slack_id_or_name ]
+    def self.find(user)
+      return user.map { |u| User.find u }.compact if user.is_a? Array
+      result = @@db.exec_params "select * from users where slack_id = $1", [ user ]
       if result.ntuples == 0
-        result = @@db.exec_params "select * from users where username = $1", [ slack_id_or_name ]
+        result = @@db.exec_params "select * from users where username = $1", [ user ]
       end
       return nil if result.ntuples == 0
 

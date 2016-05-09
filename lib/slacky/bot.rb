@@ -124,6 +124,8 @@ module Slacky
     end
 
     def run
+      @bookkeeper.keep_the_books
+
       @client.on :message do |data|
         next unless ( user = User.find data.user )
 
@@ -148,8 +150,6 @@ module Slacky
           handler.call data
         end
       end
-
-      @bookkeeper.keep_the_books
 
       puts "Slackbot is active!"
       @client.start!
