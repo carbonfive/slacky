@@ -1,6 +1,7 @@
 require 'slack-ruby-client'
 require 'set'
 require 'tzinfo'
+require 'em/cron'
 
 module Slacky
   class Bot
@@ -15,6 +16,7 @@ module Slacky
       @channel_handlers = []
       @im_handlers = []
       @raw_handlers = []
+      @cron_handlers = []
 
       unless @config.slack_api_token
         @config.log "No Slack API token found.  Use environment variable SLACK_API_TOKEN."
@@ -27,7 +29,7 @@ module Slacky
 
       @client = Slack::RealTime::Client.new
 
-      auth = @client.web_client.auth_test
+      auth = web_client.auth_test
       if auth.ok
         @slack_id = auth.user_id
         @config.log "Slackbot is active!"
@@ -43,8 +45,6 @@ module Slacky
 
       populate_users
       populate_channels
-
-      puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
     end
 
     def web_client
@@ -75,6 +75,10 @@ module Slacky
     def on_im(attrs, &block)
       attrs ||= {}
       @im_handlers << { match: attrs[:match], handler: block }
+    end
+
+    def at(cron, &block)
+      @cron_handlers << { cron: cron, handler: block }
     end
 
     def handle_channel(message)
@@ -156,6 +160,19 @@ module Slacky
         end
       end
 
+      @cron_thread ||= Thread.new do
+        EM.run do
+          @cron_handlers.each do |h|
+            cron, handler = h.values_at :cron, :handler
+            EM::Cron.schedule cron do |time|
+              handler.call
+            end
+          end
+        end
+      end
+
+      puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
+
       @client.start!
     rescue => e
       @config.log "An error ocurring inside the Slackbot", e
@@ -169,7 +186,8 @@ module Slacky
     end
 
     def populate_users
-      resp = @client.web_client.users_list presence: 1
+      print "Getting users from Slack..."
+      resp = web_client.users_list presence: 1
       throw resp unless resp.ok
       resp.members.map do |member|
         next unless member.profile.email # no bots
@@ -178,20 +196,23 @@ module Slacky
         user = User.find(member.id) || User.new(slack_id: member.id)
         user.populate(member).save
       end
+      puts " done!"
     end
 
     def populate_channels
-      resp = @client.web_client.channels_list
+      print "Getting channels from Slack..."
+      resp = web_client.channels_list
       throw resp unless resp.ok
       resp.channels.map do |channel|
         Channel.channel channel
       end
 
-      resp = @client.web_client.groups_list
+      resp = web_client.groups_list
       throw resp unless resp.ok
       resp.groups.map do |group|
         Channel.group group
       end
+      puts " done!"
     end
 
     def blowup(user, data, args, &respond)
