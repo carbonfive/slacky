@@ -11,6 +11,7 @@ module Slacky
     end
 
     def self.find(channel)
+      return nil unless channel
       return channel.map { |c| Channel.find c }.compact if channel.is_a? Array
       return channel if channel.is_a? Channel
       @@channels[channel]

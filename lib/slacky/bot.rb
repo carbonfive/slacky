@@ -95,7 +95,7 @@ module Slacky
       @channel_handlers.each do |h|
         match, channels, handler = h.values_at :match, :channels, :handler
         accept = Channel.find channels
-        next if accept && accept.index(message.channel) == -1
+        next if accept && accept.include?(message.channel)
         next if match && ! match === message
         @client.typing channel: message.channel.slack_id
         handler.call message
@@ -139,7 +139,7 @@ module Slacky
         next unless channel
 
         reject = Channel.find @config.slack_reject_channels
-        next if reject.find { |c| c.slack_id == data.channel }
+        next if reject && reject.find { |c| c.slack_id == data.channel }
 
         accept = Channel.find @config.slack_accept_channels
         next if accept && ! accept.find { |c| c.slack_id == data.channel }

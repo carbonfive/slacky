@@ -32,11 +32,13 @@ module Slacky
     end
 
     def slack_reject_channels
-      ENV.fetch('REJECT_CHANNELS', '').split(',').map {|c| c.strip}
+      return nil unless ENV['REJECT_CHANNELS']
+      ENV['REJECT_CHANNELS'].split(',').map {|c| c.strip}
     end
 
     def slack_accept_channels
-      ENV.fetch('ACCEPT_CHANNELS', '').split(',').map {|c| c.strip}
+      return nil unless ENV['ACCEPT_CHANNELS']
+      ENV['ACCEPT_CHANNELS'].split(',').map {|c| c.strip}
     end
 
     def log(msg, ex = nil)
