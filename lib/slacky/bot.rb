@@ -7,7 +7,8 @@ module Slacky
     attr_reader :client, :config, :slack_id
 
     def initialize(config)
-      puts "#{config.name} is starting to wake up..."
+      puts "#{config.name} is starting up..."
+
       @config = config
       @restarts = []
       @command_handlers = []
@@ -30,7 +31,6 @@ module Slacky
       if auth.ok
         @slack_id = auth.user_id
         @config.log "Slackbot is active!"
-        puts "I can see Slack!"
       else
         @config.log "Slackbot is doomed :-("
         return
@@ -43,7 +43,8 @@ module Slacky
 
       populate_users
       populate_channels
-      puts "Ok, I'm all loaded up"
+
+      puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
     end
 
     def web_client
@@ -52,6 +53,10 @@ module Slacky
 
     def name
       @config.down_name
+    end
+
+    def known_commands
+      @command_handlers.map { |ch| ch[:command] }
     end
 
     def on(type, &block)
@@ -151,7 +156,6 @@ module Slacky
         end
       end
 
-      puts "Slackbot is active!"
       @client.start!
     rescue => e
       @config.log "An error ocurring inside the Slackbot", e
