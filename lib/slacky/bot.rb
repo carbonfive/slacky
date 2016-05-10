@@ -165,7 +165,11 @@ module Slacky
           @cron_handlers.each do |h|
             cron, handler = h.values_at :cron, :handler
             EM::Cron.schedule cron do |time|
-              handler.call
+              begin
+                handler.call
+              rescue => e
+                @config.log "An error ocurred inside the Slackbot (in a scheduled block)", e
+              end
             end
           end
         end
@@ -175,7 +179,7 @@ module Slacky
 
       @client.start!
     rescue => e
-      @config.log "An error ocurring inside the Slackbot", e
+      @config.log "An error ocurred inside the Slackbot", e
       @restarts << Time.new
       @restarts.shift while (@restarts.length > 3)
       if @restarts.length == 3 and ( Time.new - @restarts.first < 30 )
