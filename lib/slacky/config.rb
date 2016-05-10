@@ -8,8 +8,8 @@ module Slacky
     attr_reader :pid_file, :name, :db
 
     def initialize(name, opts = {})
-      Dotenv.load ".env", "#{config_dir}/.env"
       @name = name
+      Dotenv.load ".env", "#{config_dir}/.env"
       FileUtils.mkdir config_dir unless File.directory? config_dir
       @pid_file = "#{config_dir}/pid"
       @db = PG.connect(db_connect_params)
