@@ -1,9 +1,9 @@
 module Slacky
   class Daemon
 
-    def initialize(config, bot)
+    def initialize(config, bot_class)
       @config = config
-      @bot = bot
+      @bot_class = bot_class
       @active = true
       @running = false
     end
@@ -20,8 +20,12 @@ module Slacky
       end
 
       begin
-        @slackthread = Thread.new { @bot.run }
-        run @bot
+        @slackthread = Thread.new do
+          bot = Bot.new @config
+          bot.run
+          @bot_class.new bot
+        end
+        run
       rescue => e
         @config.log "Unexpected error", e
       ensure
@@ -35,11 +39,9 @@ module Slacky
 
     private
 
-    def run(slackbot)
+    def run
       @config.log "#{@config.name} is running."
       while active? do
-        # TODO: handle timed tasks
-        #slackbot.ask_all if time.min % 10 == 0  # every 10 minutes
         sleep 0.5
       end
       @config.log "#{@config.name} got killed"

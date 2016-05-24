@@ -12,11 +12,14 @@ module Slacky
       Dotenv.load ".env", "#{config_dir}/.env"
       FileUtils.mkdir config_dir unless File.directory? config_dir
       @pid_file = "#{config_dir}/pid"
-      @db = PG.connect(db_connect_params)
-      User.db = @db
-      User.initialize_table
-
       @timestamps = {}
+      User.config = self
+    end
+
+    def db
+      db = PG.connect db_connect_params
+      db.exec 'set client_min_messages = warning'
+      db
     end
 
     def down_name

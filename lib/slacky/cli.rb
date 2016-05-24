@@ -2,12 +2,11 @@ module Slacky
   class CLI
     attr_reader :bot
 
-    def initialize(name, opts)
+    def initialize(name, bot_class, opts)
       throw "CLI must be passed a name" unless name
       @options = { :verbose => false }.merge opts
       config = Config.new name
-      @bot = Bot.new config
-      daemon = Daemon.new config, bot
+      daemon = Daemon.new config, bot_class
       @service = Service.new config, daemon
     end
 

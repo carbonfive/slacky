@@ -5,18 +5,25 @@ module Slacky
     attr_accessor :username, :slack_id, :slack_im_id, :first_name, :last_name, :email, :timezone, :presence, :data
     attr_reader :tz
 
-    @@decorator = @@db = nil
+    @@decorator = @@config = @@db = nil
 
     def self.decorator=(decorator)
       @@decorator = decorator
     end
 
-    def self.db=(db)
-      @@db = db
+    def self.config=(config)
+      @@config = config
+    end
+
+    def self.db
+      return @@db if @@db
+      @@db = @@config.db
+      initialize_table
+      @@db
     end
 
     def self.initialize_table
-      @@db.exec <<-SQL
+      self.db.exec <<-SQL
 create table if not exists users (
   username     varchar(64) not null,
   slack_id     varchar(20) not null,
@@ -33,9 +40,9 @@ SQL
 
     def self.find(user)
       return user.map { |u| User.find u }.compact if user.is_a? Array
-      result = @@db.exec_params "select * from users where slack_id = $1", [ user ]
+      result = self.db.exec_params "select * from users where slack_id = $1", [ user ]
       if result.ntuples == 0
-        result = @@db.exec_params "select * from users where username = $1", [ user ]
+        result = self.db.exec_params "select * from users where username = $1", [ user ]
       end
       return nil if result.ntuples == 0
 
@@ -77,10 +84,10 @@ SQL
     end
 
     def save
-      @@db.exec_params "delete from users where slack_id = $1", [ @slack_id ]
-      @@db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, presence, data)
-                        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                        [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @presence, JSON.dump(@data) ]
+      User.db.exec_params "delete from users where slack_id = $1", [ @slack_id ]
+      User.db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, presence, data)
+                           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                          [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @presence, JSON.dump(@data) ]
       self
     end
 

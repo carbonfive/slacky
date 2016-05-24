@@ -8,8 +8,6 @@ module Slacky
     attr_reader :client, :config, :slack_id
 
     def initialize(config)
-      puts "#{config.name} is starting up..."
-
       @config = config
       @restarts = []
       @command_handlers = []
@@ -42,9 +40,6 @@ module Slacky
 
       Channel.bot = self
       Message.bot = self
-
-      populate_users
-      populate_channels
     end
 
     def web_client
@@ -133,6 +128,12 @@ module Slacky
     end
 
     def run
+      @config.log "#{config.name} is starting up..."
+      puts "#{config.name} is starting up..."
+
+      populate_users
+      populate_channels
+
       @bookkeeper.keep_the_books
 
       @client.on :message do |data|
