@@ -78,7 +78,7 @@ SQL
       @last_name  = member.profile.last_name
       @email      = member.profile.email
       @timezone   = member.tz
-      @presence   = member.presence
+      @presence   = member['presence']
       @data       = {} unless @data
       self
     end
