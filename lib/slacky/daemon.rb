@@ -22,8 +22,8 @@ module Slacky
       begin
         @slackthread = Thread.new do
           bot = Bot.new @config
-          bot.run
           @bot_class.new bot
+          bot.run
         end
         run
       rescue => e
