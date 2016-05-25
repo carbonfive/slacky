@@ -40,11 +40,11 @@ module Slacky
     end
 
     def yes?
-      [ 'y', 'yes' ].include? @text
+      [ 'y', 'yes', 'yep' ].include? @text.downcase
     end
 
     def no?
-      [ 'n', 'no' ].include? @text
+      [ 'n', 'no', 'nope' ].include? @text.downcase
     end
 
     private
