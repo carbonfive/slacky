@@ -138,6 +138,7 @@ module Slacky
 
       @client.on :message do |data|
         next unless ( user = User.find data.user )
+        next unless user.valid?
 
         channel = Channel.find data.channel
         channel = Channel.im data.channel, user if data.channel =~ /^D/ && ! channel
@@ -194,12 +195,17 @@ module Slacky
       print "Getting users from Slack..."
       resp = web_client.users_list presence: 1
       throw resp unless resp.ok
+      User.invalidate_all_users
+      whitelist = @config.whitelist_users || []
       resp.members.map do |member|
         next unless member.profile.email # no bots
         next if member.deleted # no ghosts
-        next if member.is_ultra_restricted # no single channel guests
+        unless whitelist.include?(member.id) || whitelist.include?(member.name) || whitelist.include?("@#{member.name}")
+          next if member.is_ultra_restricted # no single channel guests
+          next if member.is_restricted # no multi channel guests either
+        end
         user = User.find(member.id) || User.new(slack_id: member.id)
-        user.populate(member).save
+        user.populate(member).validate.save
       end
       puts " done!"
     end

@@ -44,6 +44,11 @@ module Slacky
       ENV['ACCEPT_CHANNELS'].split(',').map {|c| c.strip}
     end
 
+    def whitelist_users
+      return nil unless ENV['WHITELIST_USERS']
+      ENV['WHITELIST_USERS'].split(',').map {|u| u.strip}
+    end
+
     def log(msg, ex = nil)
       log = File.new(log_file, 'a')
       timestamp = Time.now.strftime('%Y-%m-%d %H:%M:%S')

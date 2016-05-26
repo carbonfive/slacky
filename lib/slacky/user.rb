@@ -3,7 +3,12 @@ require 'json'
 module Slacky
   class User
     attr_accessor :username, :slack_id, :slack_im_id, :first_name, :last_name, :email, :timezone, :presence, :data
+    attr_writer :valid
     attr_reader :tz
+
+    def valid?
+      @valid
+    end
 
     @@decorator = @@config = @@db = nil
 
@@ -33,31 +38,51 @@ create table if not exists users (
   email        varchar(128) not null,
   timezone     varchar(256),
   presence     varchar(64),
+  valid        boolean not null default false,
   data         jsonb not null
 );
 SQL
     end
 
+    def self.invalidate_all_users
+      self.db.exec 'update users set valid = FALSE'
+    end
+
     def self.find(user)
+      return nil unless user
       return user.map { |u| User.find u }.compact if user.is_a? Array
-      result = self.db.exec_params "select * from users where slack_id = $1", [ user ]
+      match = user.match(/^<@(.*)>$/)
+      id = ( match ? match[1] : user )
+      result = self.db.exec_params "select * from users where slack_id = $1", [ id ]
       if result.ntuples == 0
-        result = self.db.exec_params "select * from users where username = $1", [ user ]
+        username = ( user =~ /^@/ ? user.sub(/^@/, '') : user )
+        result = self.db.exec_params "select * from users where username = $1", [ username ]
       end
       return nil if result.ntuples == 0
+      hydrate(result)[0]
+    end
 
-      row = result[0]
-      user = self.new username:    row['username'],
-                      slack_id:    row['slack_id'],
-                      slack_im_id: row['slack_im_id'],
-                      first_name:  row['first_name'],
-                      last_name:   row['last_name'],
-                      email:       row['email'],
-                      timezone:    row['timezone'],
-                      presence:    row['presence'],
-                      data:        JSON.parse(row['data'])
-      user.extend @@decorator if @@decorator
-      user
+    def self.find_by_data(query)
+      result = self.db.exec "select * from users where data #{query}"
+      hydrate result
+    end
+
+    def self.hydrate(result)
+      return [] if result.ntuples == 0
+      result.map do |row|
+        user = self.new username:    row['username'],
+                        slack_id:    row['slack_id'],
+                        slack_im_id: row['slack_im_id'],
+                        first_name:  row['first_name'],
+                        last_name:   row['last_name'],
+                        email:       row['email'],
+                        timezone:    row['timezone'],
+                        presence:    row['presence'],
+                        valid:       row['valid'],
+                        data:        JSON.parse(row['data'])
+        user.extend @@decorator if @@decorator
+        user
+      end
     end
 
     def initialize(attrs={})
@@ -69,6 +94,7 @@ SQL
       @email       = attrs[:email]
       @timezone    = attrs[:timezone] || "America/Los_Angeles"
       @presence    = attrs[:presence]
+      @valid       = attrs[:valid]
       @data        = attrs[:data] || {}
     end
 
@@ -83,11 +109,16 @@ SQL
       self
     end
 
+    def validate
+      @valid = true
+      self
+    end
+
     def save
       User.db.exec_params "delete from users where slack_id = $1", [ @slack_id ]
-      User.db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, presence, data)
-                           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                          [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @presence, JSON.dump(@data) ]
+      User.db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, presence, valid, data)
+                           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+                          [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @presence, @valid, JSON.dump(@data) ]
       self
     end
 

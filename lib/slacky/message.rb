@@ -39,6 +39,12 @@ module Slacky
       end
     end
 
+    def command_args
+      return nil unless command
+      index = @text.index(command) + command.length
+      @text[index..-1].strip
+    end
+
     def yes?
       [ 'y', 'yes', 'yep' ].include? @text.downcase
     end

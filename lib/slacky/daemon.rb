@@ -20,6 +20,7 @@ module Slacky
       end
 
       begin
+        Thread.abort_on_exception = true
         @slackthread = Thread.new do
           bot = Bot.new @config
           @bot_class.new bot
