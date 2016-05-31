@@ -25,6 +25,10 @@ module Slacky
       @@bot.client.message channel: @channel.slack_id, reply_to: @raw.id, text: msg
     end
 
+    def typing
+      @@bot.client.typing channel: @channel.slack_id
+    end
+
     def command?
       first = word 0
       return false unless first

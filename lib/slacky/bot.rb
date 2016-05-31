@@ -89,7 +89,6 @@ module Slacky
         @command_handlers.each do |h|
           command, handler = h.values_at :command, :handler
           next unless command == message.command
-          @client.typing channel: message.channel.slack_id
           handler.call message
           handled = true
         end
@@ -100,9 +99,8 @@ module Slacky
       @channel_handlers.each do |h|
         match, channels, handler = h.values_at :match, :channels, :handler
         accept = Channel.find channels
-        next if accept && accept.include?(message.channel)
+        next if accept && ! accept.include?(message.channel)
         next if match && ! match === message
-        @client.typing channel: message.channel.slack_id
         handler.call message
       end
     end
@@ -118,7 +116,6 @@ module Slacky
       @command_handlers.each do |h|
         command, handler = h.values_at :command, :handler
         next unless command == message.command
-        @client.typing channel: message.channel.slack_id
         handler.call message
         handled = true
       end
@@ -128,7 +125,6 @@ module Slacky
       @im_handlers.each do |h|
         match, handler = h.values_at :match, :handler
         next if match && ! match === message
-        @client.typing channel: message.channel.slack_id
         handler.call message
       end
     end
