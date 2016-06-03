@@ -46,6 +46,8 @@ module Slacky
 
       populate_users
       populate_channels
+      stay_alive
+
     end
 
     def web_client
@@ -220,6 +222,19 @@ module Slacky
         Channel.group group
       end
       puts " done!"
+    end
+
+    def stay_alive
+      at '* * * * *' do
+        @client.ping stamp: Time.now.to_f
+      end
+
+      on :pong do |data|
+        now = Time.now.to_f
+        stamp = data.stamp
+        delta = now - stamp
+        @config.log "Slow ping pong response: #{delta}s" if delta > 5
+      end
     end
 
     def blowup(user, data, args, &respond)
