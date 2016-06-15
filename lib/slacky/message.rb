@@ -30,9 +30,11 @@ module Slacky
     end
 
     def command?
-      first = word 0
+      first = downword 0
       return false unless first
-      first == @@bot.name || first == "<@#{@@bot.slack_id}>"
+      [ @@bot.name, "<@#{@@bot.slack_id.downcase}>" ].any? do |name|
+        first == name || first == "#{name}:"
+      end
     end
 
     def command

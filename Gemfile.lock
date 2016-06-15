@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    slacky (0.2.2)
+    slacky (0.2.3)
       dotenv
       em-cron
       eventmachine
@@ -43,7 +43,7 @@ GEM
     parse-cron (0.1.4)
     pg (0.18.4)
     rake (11.1.2)
-    slack-ruby-client (0.7.3)
+    slack-ruby-client (0.7.4)
       activesupport
       faraday
       faraday_middleware
