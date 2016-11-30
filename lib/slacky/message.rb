@@ -47,7 +47,7 @@ module Slacky
 
     def command_args
       return nil unless command
-      index = @text.index(command) + command.length
+      index = @text.downcase.index(command) + command.length
       @text[index..-1].strip
     end
 
