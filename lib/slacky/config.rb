@@ -20,6 +20,12 @@ module Slacky
       db = PG.connect db_connect_params
       db.exec 'set client_min_messages = warning'
       db
+    rescue => e
+      if e.message =~ /does not exist/
+        puts
+        puts "ERROR - database does not exist: #{db_connect_params}"
+      end
+      raise e
     end
 
     def down_name
