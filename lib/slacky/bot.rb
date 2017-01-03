@@ -206,6 +206,9 @@ module Slacky
         user.populate(member).validate.save
       end
       puts " done!"
+    rescue => e
+      puts " error: #{e.message}"
+      raise e
     end
 
     def populate_channels
@@ -222,6 +225,9 @@ module Slacky
         Channel.group group
       end
       puts " done!"
+    rescue => e
+      puts " error: #{e.message}"
+      raise e
     end
 
     def stay_alive
