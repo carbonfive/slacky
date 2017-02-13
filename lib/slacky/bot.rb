@@ -219,7 +219,7 @@ module Slacky
 
     def stay_alive
       at '* * * * *' do
-        @client.pingg stamp: Time.now.to_f
+        @client.ping stamp: Time.now.to_f
       end
 
       on :pong do |data|
