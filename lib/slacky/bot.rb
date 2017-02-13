@@ -12,7 +12,6 @@ module Slacky
       puts "#{config.name} is starting up..."
 
       @config = config
-      @restarts = []
       @command_handlers = []
       @channel_handlers = []
       @im_handlers = []
@@ -160,16 +159,13 @@ module Slacky
         end
       end
 
+      Thread.abort_on_exception = true
       @cron_thread ||= Thread.new do
         EM.run do
           @cron_handlers.each do |h|
             cron, handler = h.values_at :cron, :handler
             EM::Cron.schedule cron do |time|
-              begin
-                handler.call
-              rescue => e
-                @config.log "An error ocurred inside the Slackbot (in a scheduled block)", e
-              end
+              handler.call
             end
           end
         end
@@ -178,15 +174,6 @@ module Slacky
       puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
 
       @client.start!
-    rescue => e
-      @config.log "An error ocurred inside the Slackbot", e
-      @restarts << Time.new
-      @restarts.shift while (@restarts.length > 3)
-      if @restarts.length == 3 and ( Time.new - @restarts.first < 30 )
-        @config.log "Too many errors.  Not restarting anymore."
-      else
-        run
-      end
     end
 
     def populate_users
@@ -232,7 +219,7 @@ module Slacky
 
     def stay_alive
       at '* * * * *' do
-        @client.ping stamp: Time.now.to_f
+        @client.pingg stamp: Time.now.to_f
       end
 
       on :pong do |data|
