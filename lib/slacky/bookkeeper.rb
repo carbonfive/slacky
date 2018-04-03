@@ -9,12 +9,6 @@ module Slacky
     end
 
     def keep_the_books
-      @client.on :presence_change do |data|
-        next unless ( user = User.find data.user )
-        user.presence = data['presence']
-        user.save
-      end
-
       @client.on :channel_created do |data|
         web_client.channels_info(channel: data.channel.id).tap do |resp|
           if resp.ok

@@ -178,7 +178,7 @@ module Slacky
 
     def populate_users
       print "Getting users from Slack..."
-      resp = web_client.users_list presence: 1
+      resp = web_client.users_list
       throw resp unless resp.ok
       User.invalidate_all_users
       whitelist = @config.whitelist_users || []

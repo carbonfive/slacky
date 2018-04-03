@@ -2,7 +2,7 @@ require 'json'
 
 module Slacky
   class User
-    attr_accessor :username, :slack_id, :slack_im_id, :first_name, :last_name, :email, :timezone, :presence, :data
+    attr_accessor :username, :slack_id, :slack_im_id, :first_name, :last_name, :email, :timezone, :data
     attr_writer :valid
     attr_reader :tz
 
@@ -37,7 +37,6 @@ create table if not exists users (
   last_name    varchar(64),
   email        varchar(128) not null,
   timezone     varchar(256),
-  presence     varchar(64),
   valid        boolean not null default false,
   data         jsonb not null
 );
@@ -77,7 +76,6 @@ SQL
                         last_name:   row['last_name'],
                         email:       row['email'],
                         timezone:    row['timezone'],
-                        presence:    row['presence'],
                         valid:       row['valid'],
                         data:        JSON.parse(row['data'])
         user.extend @@decorator if @@decorator
@@ -93,7 +91,6 @@ SQL
       @last_name   = attrs[:last_name]
       @email       = attrs[:email]
       @timezone    = attrs[:timezone] || "America/Los_Angeles"
-      @presence    = attrs[:presence]
       @valid       = attrs[:valid]
       @data        = attrs[:data] || {}
     end
@@ -104,7 +101,6 @@ SQL
       @last_name  = member.profile.last_name
       @email      = member.profile.email
       @timezone   = member.tz
-      @presence   = member['presence']
       @data       = {} unless @data
       self
     end
@@ -116,9 +112,9 @@ SQL
 
     def save
       User.db.exec_params "delete from users where slack_id = $1", [ @slack_id ]
-      User.db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, presence, valid, data)
-                           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-                          [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @presence, @valid, JSON.dump(@data) ]
+      User.db.exec_params "insert into users (username, slack_id, slack_im_id, first_name, last_name, email, timezone, valid, data)
+                           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                          [ @username, @slack_id, @slack_im_id, @first_name, @last_name, @email, @timezone, @valid, JSON.dump(@data) ]
       self
     end
 
