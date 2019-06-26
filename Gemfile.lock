@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    slacky (0.3.0)
+    slacky (0.3.1)
       dotenv
       em-cron
       eventmachine
