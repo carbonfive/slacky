@@ -58,7 +58,7 @@ module Slacky
       when :channel ; @member
       when :group   ; @members[@@bot.slack_id]
       when :im      ; true
-      else            throw "Unknown channel type: #{@type}"
+      else            raise "Unknown channel type: #{@type}"
       end
     end
 

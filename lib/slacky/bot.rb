@@ -8,9 +8,6 @@ module Slacky
     attr_reader :client, :config, :slack_id
 
     def initialize(config)
-      config.log "#{config.name} is starting up..."
-      puts "#{config.name} is starting up..."
-
       @config = config
       @command_handlers = []
       @channel_handlers = []
@@ -19,8 +16,7 @@ module Slacky
       @cron_handlers = []
 
       unless @config.slack_api_token
-        @config.log "No Slack API token found.  Use environment variable SLACK_API_TOKEN."
-        return
+        raise "No Slack API token found.  Use environment variable SLACK_API_TOKEN."
       end
 
       Slack.configure do |slack_cfg|
@@ -30,13 +26,8 @@ module Slacky
       @client = Slack::RealTime::Client.new
 
       auth = web_client.auth_test
-      if auth.ok
-        @slack_id = auth.user_id
-        @config.log "Slackbot is active!"
-      else
-        @config.log "Slackbot is doomed :-("
-        return
-      end
+      @slack_id = auth.user_id
+      puts "Slackbot is active!"
 
       @bookkeeper = Bookkeeper.new @client
 
@@ -47,6 +38,7 @@ module Slacky
       populate_channels
       stay_alive
 
+      on_command 'blowup', &(method :blowup)
     end
 
     def web_client
@@ -159,27 +151,28 @@ module Slacky
         end
       end
 
-      Thread.abort_on_exception = true
-      @cron_thread ||= Thread.new do
-        EM.run do
-          @cron_handlers.each do |h|
-            cron, handler = h.values_at :cron, :handler
-            EM::Cron.schedule cron do |time|
-              handler.call
-            end
+      puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
+
+      Thread.report_on_exception = false if defined? Thread.report_on_exception
+
+      @client.start! do
+        # This code must run in the callback / block because it requires EventMachine
+        # be running before it gets executed.  If we can find another way to handle
+        # this cron syntax we can move to using the async-websocket library instead
+        # of EventMachine. -mike
+
+        @cron_handlers.each do |h|
+          cron, handler = h.values_at :cron, :handler
+          EM::Cron.schedule cron do |time|
+            handler.call
           end
         end
       end
-
-      puts "#{@config.name} is listening to: #{@config.slack_accept_channels}"
-
-      @client.start!
     end
 
     def populate_users
       print "Getting users from Slack..."
       resp = web_client.users_list
-      throw resp unless resp.ok
       User.invalidate_all_users
       whitelist = @config.whitelist_users || []
       resp.members.map do |member|
@@ -201,13 +194,11 @@ module Slacky
     def populate_channels
       print "Getting channels from Slack..."
       resp = web_client.channels_list
-      throw resp unless resp.ok
       resp.channels.map do |channel|
         Channel.channel channel
       end
 
       resp = web_client.groups_list
-      throw resp unless resp.ok
       resp.groups.map do |group|
         Channel.group group
       end
@@ -226,14 +217,14 @@ module Slacky
         now = Time.now.to_f
         stamp = data.stamp
         delta = now - stamp
-        @config.log "Slow ping pong response: #{delta}s" if delta > 5
+        raise Exception.new("Slow ping pong response: #{delta}s") if delta > 5
       end
     end
 
-    def blowup(user, data, args, &respond)
-      respond.call "Tick... tick... tick... BOOM!   Goodbye."
+    def blowup(message)
+      message.reply "Tick... tick... tick... BOOM!   Goodbye."
       EM.next_tick do
-        raise "kablammo!"
+        raise Exception.new("kablammo!")
       end
     end
   end
