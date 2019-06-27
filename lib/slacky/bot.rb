@@ -19,8 +19,12 @@ module Slacky
         raise "No Slack API token found.  Use environment variable SLACK_API_TOKEN."
       end
 
-      Slack.configure do |slack_cfg|
-        slack_cfg.token = @config.slack_api_token
+      Slack.configure do |cfg|
+        cfg.token = @config.slack_api_token
+      end
+
+      Slack::RealTime.configure do |cfg|
+        cfg.concurrency = Slack::RealTime::Concurrency::Eventmachine
       end
 
       @client = Slack::RealTime::Client.new
