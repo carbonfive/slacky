@@ -218,10 +218,11 @@ module Slacky
       end
 
       on :pong do |data|
-        now = Time.now.to_f
-        stamp = data.stamp
-        delta = now - stamp
-        raise Exception.new("Slow ping pong response: #{delta}s") if delta > 5
+        if data.stamp
+          now = Time.now.to_f
+          delta = now - data.stamp
+          raise Exception.new("Slow ping pong response: #{delta}s") if delta > 5
+        end
       end
     end
 
