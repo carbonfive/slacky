@@ -1,7 +1,6 @@
 require 'slack-ruby-client'
 require 'set'
 require 'tzinfo'
-require 'em/cron'
 
 module Slacky
   class Bot
@@ -24,7 +23,7 @@ module Slacky
       end
 
       Slack::RealTime.configure do |cfg|
-        cfg.concurrency = Slack::RealTime::Concurrency::Eventmachine
+        cfg.concurrency = Slack::RealTime::Concurrency::Async
       end
 
       @client = Slack::RealTime::Client.new
@@ -159,15 +158,10 @@ module Slacky
 
       Thread.report_on_exception = false if defined? Thread.report_on_exception
 
-      @client.start! do
-        # This code must run in the callback / block because it requires EventMachine
-        # be running before it gets executed.  If we can find another way to handle
-        # this cron syntax we can move to using the async-websocket library instead
-        # of EventMachine. -mike
-
+      @client.start! do |driver|
         @cron_handlers.each do |h|
           cron, handler = h.values_at :cron, :handler
-          EM::Cron.schedule cron do |time|
+          Cronner.schedule cron do |time|
             handler.call
           end
         end

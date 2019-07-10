@@ -16,11 +16,10 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_runtime_dependency 'slack-ruby-client', ">= 0.14"
+  s.add_runtime_dependency 'slack-ruby-client'
   s.add_runtime_dependency 'pg'
-  s.add_runtime_dependency 'eventmachine'
-  s.add_runtime_dependency 'faye-websocket'
-  s.add_runtime_dependency 'em-cron'
+  s.add_runtime_dependency 'async-websocket', "~> 0.8.0"
+  s.add_runtime_dependency 'parse-cron'
   s.add_runtime_dependency 'tzinfo'
   s.add_runtime_dependency 'tzinfo-data'
   s.add_runtime_dependency 'dotenv'

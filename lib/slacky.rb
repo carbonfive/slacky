@@ -8,4 +8,5 @@ module Slacky
   require 'slacky/user'
   require 'slacky/channel'
   require 'slacky/message'
+  require 'slacky/cronner'
 end
